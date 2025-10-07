@@ -19,12 +19,22 @@ def validate_patient(message: str) -> str:
 
         patients_df = pd.read_csv('data/patients_info.csv')
         df_columns = patients_df.columns
-        register_df = pd.DataFrame([[patient_json[df_columns[0]], patient_json[df_columns[1]], patient_json[df_columns[2]]]], columns=df_columns)
-        
-        patients_df = pd.concat([patients_df, register_df]).drop_duplicates(keep='first')
-        patients_df.to_csv('data/patients_info.csv', index=False)
 
-        return 'Success'
+        if patient_json['full_name'] not in patients_df.full_name.values:
+            register_df = pd.DataFrame([[patient_json[df_columns[0]], patient_json[df_columns[1]], patient_json[df_columns[2]]]], columns=df_columns)
+            
+            patients_df = pd.concat([patients_df, register_df]).drop_duplicates(keep='first')
+            patients_df.to_csv('data/patients_info.csv', index=False)
+            return 'New Patient Registered'
+        else:
+            patient_data = patients_df[patients_df.full_name == patient_json['full_name']]
+            patient_phone = patient_data.phone_number.values[0]
+            patient_birth = patient_data.birth_date.values[0]
+
+            if (int(patient_phone) == int(patient_json['phone_number'])) and (patient_birth == patient_json['birth_date']):
+                return 'Validation Success'
+            else:
+                return 'Validation Failed: Data do not match. Please, check your information and try again.' 
         
     except Exception as e:
         print(message)
@@ -167,7 +177,7 @@ class MedicalAgent:
     def _validation_tool(self, message: str) -> str:
         """
         This tool is used to validate the patients info.
-        This tool requires a json format as input
+        Always call this tool using a json format as input with the required fields
         Required fields:
         - full_name
         - phone_number
